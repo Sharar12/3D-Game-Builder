@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VOIDRUNNER</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body class="edit-mode">
+<div id="app">
+  <canvas id="scene"></canvas>
+
+  <div id="hud">
+    <div class="hud-corner hud-left">
+      <div class="stat">
+        <span class="label">INTEGRITY</span>
+        <div class="bar"><div id="health-fill"></div></div>
+      </div>
+      <div class="stat row">
+        <span class="label">ENEMIES</span><span id="wave-value" class="value">0</span>
+      </div>
+    </div>
+
+    <div class="hud-corner hud-right">
+      <div class="stat row">
+        <span class="label">SCORE</span><span id="score-value" class="value">0</span>
+      </div>
+    </div>
+
+    <div id="crosshair"><span></span></div>
+    <div id="vignette"></div>
+
+    <div id="edit-panel" class="panel panel-left">
+      <div class="panel-header">
+        <div class="panel-tag"><span class="pulse-dot"></span> TACTICAL SYSTEM</div>
+        <h2>LEVEL ARCHITECT</h2>
+      </div>
+      
+      <!-- CREATE MESH BUTTON (POPUP) -->
+      <button id="btn-open-create-mesh" class="panel-btn primary mesh-trigger-btn">
+        ❖ CREATE MESH (POPUP)
+      </button>
+
+      <!-- PLACEMENT MODE -->
+      <div class="mode-toggle">
+        <button id="btn-mode-block"  class="mode-btn">■ BLOCK</button>
+        <button id="btn-mode-enemy"  class="mode-btn active">▲ ENEMY</button>
+        <button id="btn-mode-player" class="mode-btn">◆ PLAYER</button>
+      </div>
+
+      <!-- MAP SECTION -->
+      <details class="menu-section">
+        <summary><span>📐 ARENA BOUNDS</span></summary>
+        <div style="display:flex; gap:8px; align-items:center; margin-top:6px;">
+          <div style="flex:1; display:flex; align-items:center; gap:6px;">
+            <span style="font-size:10px; color:rgba(219,231,255,0.6); font-weight:600;">SIZE</span>
+            <input type="number" id="input-map-size" value="32" min="10" max="100" style="width:100%;">
+          </div>
+          <button id="btn-apply-size" class="panel-btn" style="padding:6px 12px;">APPLY</button>
+        </div>
+      </details>
+
+      <!-- PROCEDURAL GENERATOR -->
+      <details class="menu-section">
+        <summary><span>⚡ PROCEDURAL DUNGEON</span></summary>
+        <div class="slider-row">
+          <label>Width</label>
+          <input type="number" id="gen-width" value="40" min="10" max="100">
+          <span></span>
+        </div>
+        <div class="slider-row">
+          <label>Height</label>
+          <input type="number" id="gen-height" value="40" min="10" max="100">
+          <span></span>
+        </div>
+        <div class="slider-row">
+          <label>Rooms</label>
+          <input type="number" id="gen-rooms" value="5" min="1" max="20">
+          <span></span>
+        </div>
+        <button id="btn-generate" class="panel-btn" style="margin-top:6px; width:100%;">⚡ GENERATE ROOMS</button>
+        <button id="btn-open-create-mesh-alt" class="panel-btn" style="margin-top:4px; width:100%;">❖ OPEN MESH ARCHITECT POPUP</button>
+      </details>
+
+      <!-- SAVED MAPS -->
+      <details class="menu-section">
+        <summary><span>💾 SAVED SECTORS</span></summary>
+        <div style="display:flex; gap:6px; margin: 6px 0 8px 0;">
+          <input type="text" id="input-map-name" placeholder="Sector Name..." style="flex:1;">
+          <button id="btn-save-as" class="panel-btn" style="padding:6px 10px; white-space:nowrap;">SAVE</button>
+        </div>
+        <div id="saved-maps-list" style="display:flex; flex-direction:column; gap:8px; max-height:190px; overflow-y:auto; padding-right:2px;">
+          <!-- Map items will be injected here by JS -->
+        </div>
+      </details>
+
+      <!-- PLAYER SECTION -->
+      <details class="menu-section">
+        <summary><span>🏃 PLAYER SPECS</span></summary>
+        <div class="slider-row">
+          <label>Walk Speed</label>
+          <input type="range" id="slider-player-speed" min="3" max="15" step="0.1">
+          <span id="slider-player-speed-val" class="slider-val">7.20</span>
+        </div>
+        <div class="slider-row">
+          <label>Fire Delay</label>
+          <input type="range" id="slider-fire-rate" min="0.04" max="0.5" step="0.01">
+          <span id="slider-fire-rate-val" class="slider-val">0.11</span>
+        </div>
+        <div class="slider-row">
+          <label>Bullet Dmg</label>
+          <input type="range" id="slider-bullet-damage" min="0.2" max="4" step="0.1">
+          <span id="slider-bullet-damage-val" class="slider-val">1.00</span>
+        </div>
+      </details>
+
+      <!-- ENEMY SECTION -->
+      <details class="menu-section" open>
+        <summary><span>👁️ ENEMY AI & COMBAT</span></summary>
+        
+        <label class="check-row" style="margin: 4px 0 8px 0;">
+          <input type="checkbox" id="chk-armed">
+          <span>Armed (returns fire)</span>
+        </label>
+
+        <div class="slider-row">
+          <label>View Angle</label>
+          <input type="range" id="slider-view-angle" min="30" max="160" step="5">
+          <span id="slider-view-angle-val" class="slider-val">90°</span>
+        </div>
+        <div class="slider-row">
+          <label>Suspicion</label>
+          <input type="range" id="slider-suspicion-time" min="0.5" max="10" step="0.1">
+          <span id="slider-suspicion-time-val" class="slider-val">2.0s</span>
+        </div>
+        <div class="slider-row">
+          <label>Alert Trigger</label>
+          <input type="range" id="slider-alert-threshold" min="10" max="100" step="1">
+          <span id="slider-alert-threshold-val" class="slider-val">66.7%</span>
+        </div>
+        <div class="slider-row">
+          <label>Alert Delay</label>
+          <input type="range" id="slider-alert-duration" min="5" max="100" step="1">
+          <span id="slider-alert-duration-val" class="slider-val">33%</span>
+        </div>
+        <div class="slider-row">
+          <label>Vision Dist</label>
+          <input type="range" id="slider-vision-range" min="2" max="40" step="0.5">
+          <span id="slider-vision-range-val" class="slider-val">20.0</span>
+        </div>
+        
+        <div style="height:1px; background:rgba(99,232,255,0.12); margin:6px 0;"></div>
+
+        <div class="slider-row">
+          <label>Enemy Speed</label>
+          <input type="range" id="slider-enemy-speed" min="0.2" max="3" step="0.05">
+          <span id="slider-enemy-speed-val" class="slider-val">1.00</span>
+        </div>
+        <div class="slider-row">
+          <label>Enemy HP</label>
+          <input type="range" id="slider-enemy-hp" min="0.3" max="4" step="0.1">
+          <span id="slider-enemy-hp-val" class="slider-val">1.00</span>
+        </div>
+        <div class="slider-row">
+          <label>Enemy Dmg</label>
+          <input type="range" id="slider-enemy-damage" min="1" max="40" step="1">
+          <span id="slider-enemy-damage-val" class="slider-val">9</span>
+        </div>
+        <div class="slider-row">
+          <label>Enemy Rate</label>
+          <input type="range" id="slider-enemy-fire" min="0.3" max="4" step="0.1">
+          <span id="slider-enemy-fire-val" class="slider-val">1.60</span>
+        </div>
+
+        <label class="check-row" style="margin-top: 8px;">
+          <input type="checkbox" id="chk-show-cones">
+          <span>Show Vision Cones</span>
+        </label>
+      </details>
+
+      <!-- TELEMETRY TILES -->
+      <div class="telemetry-grid">
+        <div class="telemetry-tile">
+          <div class="telemetry-label">ENEMIES</div>
+          <div id="enemy-count" class="telemetry-val">0</div>
+        </div>
+        <div class="telemetry-tile">
+          <div class="telemetry-label">SPAWN POINT</div>
+          <div id="player-spawn-tag" class="status-tag">DEFAULT</div>
+        </div>
+      </div>
+
+      <p class="hint-card" id="panel-hint">
+        <span class="kbd">LMB</span> place enemy &nbsp;·&nbsp; <span class="kbd">RMB</span> remove<br>
+        <span class="kbd">DRAG</span> orbit &nbsp;·&nbsp; <span class="kbd">SCROLL</span> zoom
+      </p>
+
+      <button id="btn-play" class="panel-btn primary" style="margin-top: 4px;">▶ INITIATE COMBAT</button>
+      <button id="btn-clear" class="panel-btn danger">✕ PURGE ALL SPAWNS</button>
+    </div>
+
+    <div id="play-panel" class="panel panel-right hidden">
+      <div class="panel-header">
+        <div class="panel-tag"><span class="pulse-dot active"></span> LIVE SIMULATION</div>
+        <h2>COMBAT ACTIVE</h2>
+      </div>
+
+      <div class="telemetry-card">
+        <div class="telemetry-title">TACTICAL STATUS</div>
+        <div class="telemetry-desc">Hostiles active. Engage targets and survive the breach.</div>
+      </div>
+
+      <div class="keybind-list">
+        <div class="keybind-item"><span>Move</span><span class="kbd">W A S D</span></div>
+        <div class="keybind-item"><span>Sprint</span><span class="kbd">SHIFT</span></div>
+        <div class="keybind-item"><span>Jump</span><span class="kbd">SPACE</span></div>
+        <div class="keybind-item"><span>Fire</span><span class="kbd">LMB</span></div>
+        <div class="keybind-item"><span>Pause / Menu</span><span class="kbd">ESC</span></div>
+      </div>
+
+      <button id="btn-edit" class="panel-btn" style="margin-top:6px;">◼ RETURN TO ARCHITECT</button>
+    </div>
+
+    <div id="overlay" class="hidden">
+      <h1 id="ov-title">VOIDRUNNER</h1>
+      <p id="ov-sub">A 3D vertical slice</p>
+      <div id="ov-actions">
+        <button id="ov-btn">CLICK TO PLAY</button>
+        <button id="ov-btn-edit" class="hidden">◼ EDIT MODE</button>
+      </div>
+      <p class="hint">WASD move · Mouse look · Space jump · LMB fire · Shift sprint · Esc pause</p>
+    </div>
+  </div> <!-- /#hud -->
+
+  <!-- CREATE MESH POPUP MODAL (DIRECT CHILD OF #app) -->
+  <div id="modal-create-mesh" class="modal-overlay hidden">
+    <div class="mesh-modal-card">
+      <div class="mesh-modal-header">
+        <div class="mesh-modal-title-wrap">
+          <span class="mesh-modal-icon">❖</span>
+          <div>
+            <h3>CREATE MESH ARCHITECTURE</h3>
+            <p class="mesh-modal-sub">Procedural sector generation & 2D interactive blueprint sculptor</p>
+          </div>
+        </div>
+        <button type="button" id="btn-close-mesh-modal" class="modal-close-btn" title="Close">✕</button>
+      </div>
+
+      <div class="mesh-modal-body">
+        <!-- LEFT COLUMN: CONTROLS -->
+        <div class="mesh-controls-col">
+          <!-- ARCHITECTURE PRESET -->
+          <div class="control-group">
+            <label class="control-label">ARCHITECTURE PRESET</label>
+            <div class="preset-grid">
+              <button type="button" class="preset-btn active" data-preset="dungeon">🏰 Dungeon</button>
+              <button type="button" class="preset-btn" data-preset="warehouse">🏢 Warehouse</button>
+              <button type="button" class="preset-btn" data-preset="arena">🏟️ Colosseum</button>
+              <button type="button" class="preset-btn" data-preset="labyrinth">🌀 Labyrinth</button>
+              <button type="button" class="preset-btn" data-preset="facility">🔬 Facility</button>
+              <button type="button" class="preset-btn" data-preset="blank">⬛ Blank Slate</button>
+            </div>
+          </div>
+
+          <!-- DIMENSIONS -->
+          <div class="control-group">
+            <label class="control-label">GRID DIMENSIONS</label>
+            <div class="slider-row">
+              <label>Width</label>
+              <input type="range" id="modal-mesh-width" min="16" max="70" value="40" step="2">
+              <span id="modal-mesh-width-val" class="slider-val">40</span>
+            </div>
+            <div class="slider-row">
+              <label>Length</label>
+              <input type="range" id="modal-mesh-length" min="16" max="70" value="40" step="2">
+              <span id="modal-mesh-length-val" class="slider-val">40</span>
+            </div>
+            <div class="slider-row" id="row-modal-rooms">
+              <label>Rooms / Pillars</label>
+              <input type="range" id="modal-mesh-rooms" min="2" max="18" value="6" step="1">
+              <span id="modal-mesh-rooms-val" class="slider-val">6</span>
+            </div>
+          </div>
+
+          <!-- MESH AESTHETICS -->
+          <div class="control-group">
+            <label class="control-label">MESH GEOMETRY & TRIM</label>
+            <div class="slider-row">
+              <label>Wall Height</label>
+              <input type="range" id="modal-mesh-height" min="1.5" max="5.5" value="3.0" step="0.5">
+              <span id="modal-mesh-height-val" class="slider-val">3.0m</span>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:6px;">
+              <label style="font-size:11px; color:rgba(219,231,255,0.7);">Neon Trim</label>
+              <div class="glow-palette">
+                <div class="glow-swatch active" data-color="0x2fd4ff" style="background:#00f0ff;" title="Cyan"></div>
+                <div class="glow-swatch" data-color="0x00ff88" style="background:#00ff88;" title="Emerald"></div>
+                <div class="glow-swatch" data-color="0xffaa00" style="background:#ffaa00;" title="Amber"></div>
+                <div class="glow-swatch" data-color="0xff3b5c" style="background:#ff3b5c;" title="Crimson"></div>
+                <div class="glow-swatch" data-color="0xbb33ff" style="background:#bb33ff;" title="Violet"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- BLUEPRINT BRUSH TOOLS -->
+          <div class="control-group">
+            <label class="control-label">BLUEPRINT TOOLS</label>
+            <div class="brush-tools">
+              <button type="button" class="brush-btn" id="brush-wall" title="Paint Solid Wall">🧱 Paint Wall</button>
+              <button type="button" class="brush-btn active" id="brush-carve" title="Carve Walkable Floor">🧹 Carve Floor</button>
+              <button type="button" class="brush-btn" id="brush-room" title="Drag to Hollow Room">⛶ Hollow Room</button>
+            </div>
+            <div style="display:flex; gap:6px; margin-top:8px;">
+              <button type="button" class="panel-btn" id="btn-modal-reroll" style="flex:1;">🎲 Re-Roll</button>
+              <button type="button" class="panel-btn danger" id="btn-modal-clear" style="flex:1;">✕ Reset</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN: BLUEPRINT CANVAS PREVIEW -->
+        <div class="mesh-canvas-col">
+          <div class="canvas-header-bar">
+            <div class="canvas-stat"><span id="canvas-dim-tag">40 × 40</span></div>
+            <div class="canvas-stat">BLOCKS: <span id="canvas-blocks-tag" class="accent">0</span></div>
+            <div class="canvas-stat">FLOOR: <span id="canvas-floor-tag" class="accent">0%</span></div>
+            <div class="canvas-stat" style="color:#00ffaa; font-weight:700;">GATE: <span id="canvas-gate-tag" style="color:#00ffaa;">SOUTH</span></div>
+          </div>
+
+          <div class="canvas-wrapper">
+            <canvas id="mesh-blueprint-canvas" width="360" height="360"></canvas>
+          </div>
+
+          <p class="canvas-hint">
+            <span class="kbd">LMB</span> draw / carve &nbsp;·&nbsp; Drag tool: <span class="kbd">CLICK + DRAG</span>
+          </p>
+        </div>
+      </div>
+
+      <div class="mesh-modal-footer">
+        <button type="button" id="btn-mesh-modal-cancel" class="panel-btn">CANCEL</button>
+        <button type="button" id="btn-mesh-modal-apply" class="panel-btn primary">❖ BUILD & DEPLOY 3D MESH</button>
+      </div>
+    </div>
+  </div>
+</div> <!-- /#app -->
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+
+<script src="js/core/Utils.js"></script>
+<script src="js/core/Input.js"></script>
+<script src="js/core/Loop.js"></script>
+<script src="js/world/World.js"></script>
+<script src="js/world/Arena.js"></script>
+<script src="js/fx/Effects.js"></script>
+<script src="js/entities/Player.js"></script>
+<script src="js/entities/Projectiles.js"></script>
+<script src="js/entities/Enemies.js"></script>
+<script src="js/ui/HUD.js"></script>
+<script src="js/core/Editor.js"></script>
+<script src="js/ui/MeshModal.js"></script>
+<script src="js/ui/Panels.js"></script>
+<script src="js/core/Game.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
